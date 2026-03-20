@@ -98,7 +98,7 @@ function buildEmailHtml(jobs, subscriber) {
               <tr>
                 <td style="padding-top:32px;border-top:1px solid #1a1a1a;margin-top:32px;">
                   <p style="margin:0;font-size:12px;color:#444;line-height:1.6;">
-                    Recibiste este mail porque te suscribiste en pixeljobs.vercel.app<br/>
+                    Recibiste este mail porque te suscribiste en PORFO.vercel.app<br/>
                     Si no querés recibir más mails, ignorá este mensaje.
                   </p>
                 </td>

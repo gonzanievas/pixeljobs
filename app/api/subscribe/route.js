@@ -50,7 +50,7 @@ export async function POST(request) {
     await resend.emails.send({
       from: 'Pixel Jobs <onboarding@resend.dev>',
       to: email,
-      subject: '¡Ya estás dentro de Pixel Jobs! 🎨',
+      subject: '¡Ya estás dentro de PORFO! 🎨',
       html: `
         <!DOCTYPE html>
         <html>
@@ -155,7 +155,7 @@ export async function POST(request) {
                   <tr>
                     <td style="border-top:1px solid #1a1a1a;padding-top:24px;">
                       <p style="margin:0;font-size:12px;color:#444;line-height:1.6;">
-                        Recibiste este mail porque te suscribiste en pixeljobs.vercel.app<br/>
+                        Recibiste este mail porque te suscribiste en PORFO.vercel.app<br/>
                         Si no fuiste vos, ignorá este mensaje.
                       </p>
                     </td>

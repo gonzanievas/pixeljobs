@@ -33,7 +33,7 @@ export default function Home() {
   const [modality, setModality] = useState('')
   const [language, setLanguage] = useState('')
   const [frequency, setFrequency] = useState('weekly')
-  const [status, setStatus] = useState('idle') // idle | loading | success | error
+  const [status, setStatus] = useState('idle')
   const [errorMsg, setErrorMsg] = useState('')
 
   const toggleSpecialty = (id) => {
@@ -93,7 +93,6 @@ export default function Home() {
       fontFamily: '"DM Sans", sans-serif',
     }}>
 
-      {/* Google Font */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -130,7 +129,7 @@ export default function Home() {
               fontWeight: '500',
               color: '#ffffff',
               letterSpacing: '0.05em',
-            }}>PIXEL JOBS</span>
+            }}>PORFO</span>
           </div>
 
           <h1 style={{
@@ -191,7 +190,6 @@ export default function Home() {
             gap: '28px',
           }}>
 
-            {/* Email */}
             <div>
               <label style={{ fontSize: '12px', color: '#555', letterSpacing: '0.08em', display: 'block', marginBottom: '10px' }}>
                 TU EMAIL
@@ -214,7 +212,6 @@ export default function Home() {
               />
             </div>
 
-            {/* Especialidad */}
             <div>
               <label style={{ fontSize: '12px', color: '#555', letterSpacing: '0.08em', display: 'block', marginBottom: '10px' }}>
                 ESPECIALIDAD (podés elegir varias)
@@ -243,7 +240,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Modalidad */}
             <div>
               <label style={{ fontSize: '12px', color: '#555', letterSpacing: '0.08em', display: 'block', marginBottom: '10px' }}>
                 MODALIDAD
@@ -273,7 +269,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Idioma */}
             <div>
               <label style={{ fontSize: '12px', color: '#555', letterSpacing: '0.08em', display: 'block', marginBottom: '10px' }}>
                 IDIOMA DE TRABAJO
@@ -303,7 +298,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Frecuencia */}
             <div>
               <label style={{ fontSize: '12px', color: '#555', letterSpacing: '0.08em', display: 'block', marginBottom: '10px' }}>
                 FRECUENCIA
@@ -333,14 +327,12 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Error */}
             {errorMsg && (
               <p style={{ fontSize: '13px', color: '#ff5555', marginTop: '-12px' }}>
                 {errorMsg}
               </p>
             )}
 
-            {/* Submit */}
             <button
               onClick={handleSubmit}
               disabled={status === 'loading'}
