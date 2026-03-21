@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const SPECIALTIES = [
   { id: 'uxui', label: 'UX / UI' },
@@ -27,14 +27,30 @@ const FREQUENCIES = [
   { id: 'weekly', label: 'Semanal' },
 ]
 
+const SENIORITIES = [
+  { id: 'junior', label: 'Junior' },
+  { id: 'mid', label: 'Mid' },
+  { id: 'senior', label: 'Senior' },
+  { id: 'all', label: 'Todos' },
+]
+
 export default function Home() {
   const [email, setEmail] = useState('')
   const [specialties, setSpecialties] = useState([])
   const [modality, setModality] = useState('')
   const [language, setLanguage] = useState('')
   const [frequency, setFrequency] = useState('weekly')
+  const [seniority, setSeniority] = useState('all')
   const [status, setStatus] = useState('idle')
   const [errorMsg, setErrorMsg] = useState('')
+  const [subscriberCount, setSubscriberCount] = useState(null)
+
+  useEffect(() => {
+    fetch('/api/subscribers-count')
+      .then(res => res.json())
+      .then(data => setSubscriberCount(data.count))
+      .catch(() => {})
+  }, [])
 
   const toggleSpecialty = (id) => {
     setSpecialties(prev =>
@@ -67,7 +83,7 @@ export default function Home() {
       const res = await fetch('/api/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, specialties, modality, language, frequency }),
+        body: JSON.stringify({ email, specialties, modality, language, frequency, seniority }),
       })
       if (res.ok) {
         setStatus('success')
@@ -102,7 +118,6 @@ export default function Home() {
 
       <div style={{ width: '100%', maxWidth: '520px' }}>
 
-        {/* Logo */}
         <div style={{ marginBottom: '48px' }}>
           <div style={{
             display: 'inline-flex',
@@ -150,6 +165,28 @@ export default function Home() {
             Curadas para UX/UI, branding, motion y más.
             Sin ruido, sin buscar. Solo lo que te importa.
           </p>
+
+          {subscriberCount !== null && (
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              marginTop: '20px',
+              background: '#111',
+              border: '1px solid #222',
+              borderRadius: '100px',
+              padding: '8px 16px',
+            }}>
+              <div style={{
+                width: '8px', height: '8px',
+                borderRadius: '50%',
+                background: '#c8ff00',
+              }}/>
+              <span style={{ fontSize: '13px', color: '#888' }}>
+                <span style={{ color: '#fff', fontWeight: '600' }}>{subscriberCount}</span> diseñadores ya reciben Porfo
+              </span>
+            </div>
+          )}
         </div>
 
         {status === 'success' ? (
@@ -227,6 +264,35 @@ export default function Home() {
                       border: specialties.includes(s.id) ? '1px solid #c8ff00' : '1px solid #2a2a2a',
                       background: specialties.includes(s.id) ? '#c8ff00' : 'transparent',
                       color: specialties.includes(s.id) ? '#0a0a0a' : '#666',
+                      fontSize: '13px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      fontFamily: '"DM Sans", sans-serif',
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label style={{ fontSize: '12px', color: '#555', letterSpacing: '0.08em', display: 'block', marginBottom: '10px' }}>
+                SENIORITY
+              </label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {SENIORITIES.map(s => (
+                  <button
+                    key={s.id}
+                    onClick={() => setSeniority(s.id)}
+                    style={{
+                      flex: 1,
+                      padding: '10px',
+                      borderRadius: '10px',
+                      border: seniority === s.id ? '1px solid #c8ff00' : '1px solid #2a2a2a',
+                      background: seniority === s.id ? '#c8ff00' : 'transparent',
+                      color: seniority === s.id ? '#0a0a0a' : '#666',
                       fontSize: '13px',
                       fontWeight: '500',
                       cursor: 'pointer',

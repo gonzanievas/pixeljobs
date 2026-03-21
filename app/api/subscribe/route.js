@@ -11,7 +11,7 @@ const resend = new Resend(process.env.RESEND_API_KEY)
 export async function POST(request) {
   try {
     const body = await request.json()
-    const { email, specialties, modality, language, frequency } = body
+    const { email, specialties, modality, language, frequency, seniority } = body
 
     if (!email || !specialties || !modality || !language) {
       return Response.json(
@@ -22,7 +22,7 @@ export async function POST(request) {
 
     const { error } = await supabase
       .from('subscribers')
-      .insert([{ email, specialties, modality, language, frequency }])
+      .insert([{ email, specialties, modality, language, frequency, seniority: seniority || 'all' }])
 
     if (error) {
       if (error.code === '23505') {
