@@ -157,7 +157,7 @@ export async function POST(request) {
                       <p style="margin:0;font-size:12px;color:#444;line-height:1.6;">
                         Recibiste este mail porque te suscribiste en PORFO.vercel.app<br/>
                         Si no fuiste vos, ignorá este mensaje.<br/>
-<a href="${process.env.NEXT_PUBLIC_APP_URL}/unsubscribe?token=${subscriber?.token || ''}" style="color:#555;">Darme de baja</a>
+<a href="${process.env.NEXT_PUBLIC_APP_URL}/unsubscribe?token=" || ''}" style="color:#555;">Darme de baja</a>
                       </p>
                     </td>
                   </tr>
