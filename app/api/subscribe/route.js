@@ -48,7 +48,7 @@ export async function POST(request) {
       .join(', ')
 
     await resend.emails.send({
-      from: 'PORFO <onboarding@resend.dev>',
+      from: 'Porfo <hola@porfo.site>',
       to: email,
       subject: '¡Ya estás dentro de PORFO! 🎨',
       html: `
