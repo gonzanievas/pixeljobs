@@ -48,7 +48,7 @@ export async function POST(request) {
       .join(', ')
 
     await resend.emails.send({
-      from: 'Pixel Jobs <onboarding@resend.dev>',
+      from: 'PORFO <onboarding@resend.dev>',
       to: email,
       subject: '¡Ya estás dentro de PORFO! 🎨',
       html: `
@@ -73,7 +73,7 @@ export async function POST(request) {
                             <span style="font-size:16px;">✦</span>
                           </td>
                           <td style="padding-left:10px;">
-                            <span style="font-family:monospace;font-size:14px;font-weight:600;color:#ffffff;letter-spacing:0.1em;">PIXEL JOBS</span>
+                            <span style="font-family:monospace;font-size:14px;font-weight:600;color:#ffffff;letter-spacing:0.1em;">PORFO</span>
                           </td>
                         </tr>
                       </table>
@@ -85,7 +85,7 @@ export async function POST(request) {
                     <td style="padding-bottom:16px;">
                       <h1 style="margin:0;font-size:32px;font-weight:700;color:#ffffff;line-height:1.2;">
                         Bienvenido/a a<br/>
-                        <span style="color:#c8ff00;">Pixel Jobs</span> 🎨
+                        <span style="color:#c8ff00;">PORFO</span> 🎨
                       </h1>
                     </td>
                   </tr>

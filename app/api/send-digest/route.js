@@ -67,7 +67,7 @@ function buildEmailHtml(jobs, subscriber) {
               <!-- Logo -->
               <tr>
                 <td style="padding-bottom:32px;">
-                  <span style="font-family:monospace;font-size:14px;font-weight:600;color:#c8ff00;letter-spacing:0.1em;">✦ PIXEL JOBS</span>
+                  <span style="font-family:monospace;font-size:14px;font-weight:600;color:#c8ff00;letter-spacing:0.1em;">✦ PORFO</span>
                 </td>
               </tr>
 
@@ -140,7 +140,7 @@ export async function GET(request) {
       if (matchedJobs.length === 0) continue
 
       await resend.emails.send({
-        from: 'Pixel Jobs <onboarding@resend.dev>',
+        from: 'PORFO <onboarding@resend.dev>',
         to: subscriber.email,
         subject: `${matchedJobs.length} ofertas de diseño para vos 🎨`,
         html: buildEmailHtml(matchedJobs, subscriber),
