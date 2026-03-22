@@ -20,9 +20,10 @@ export async function POST(request) {
       )
     }
 
-    const { error } = await supabase
+    const { data: inserted, error } = await supabase
       .from('subscribers')
       .insert([{ email, specialties, modality, language, frequency, seniority: seniority || 'all' }])
+      .select()
 
     if (error) {
       if (error.code === '23505') {
@@ -47,10 +48,14 @@ export async function POST(request) {
       .map(s => specialtyLabels[s] || s)
       .join(', ')
 
+    const modalityText = modality === 'remote' ? 'Remoto' : modality === 'hybrid' ? 'Híbrido' : 'Presencial'
+    const frequencyText = frequency === 'daily' ? 'Diario' : 'Semanal'
+    const token = inserted?.[0]?.token || ''
+
     await resend.emails.send({
       from: 'Porfo <hola@porfo.site>',
       to: email,
-      subject: '¡Ya estás dentro de PORFO! 🎨',
+      subject: '¡Ya estás dentro de Porfo! 🎨',
       html: `
         <!DOCTYPE html>
         <html>
@@ -85,7 +90,7 @@ export async function POST(request) {
                     <td style="padding-bottom:16px;">
                       <h1 style="margin:0;font-size:32px;font-weight:700;color:#ffffff;line-height:1.2;">
                         Bienvenido/a a<br/>
-                        <span style="color:#c8ff00;">PORFO</span> 🎨
+                        <span style="color:#c8ff00;">Porfo</span> 🎨
                       </h1>
                     </td>
                   </tr>
@@ -123,7 +128,7 @@ export async function POST(request) {
                             <table width="100%" cellpadding="0" cellspacing="0">
                               <tr>
                                 <td style="font-size:13px;color:#666;">Modalidad</td>
-                                <td align="right" style="font-size:13px;color:#fff;text-transform:capitalize;">${modality}</td>
+                                <td align="right" style="font-size:13px;color:#fff;">${modalityText}</td>
                               </tr>
                             </table>
                           </td>
@@ -133,7 +138,7 @@ export async function POST(request) {
                             <table width="100%" cellpadding="0" cellspacing="0">
                               <tr>
                                 <td style="font-size:13px;color:#666;">Frecuencia</td>
-                                <td align="right" style="font-size:13px;color:#fff;text-transform:capitalize;">${frequency === 'daily' ? 'Diario' : 'Semanal'}</td>
+                                <td align="right" style="font-size:13px;color:#fff;">${frequencyText}</td>
                               </tr>
                             </table>
                           </td>
@@ -155,9 +160,9 @@ export async function POST(request) {
                   <tr>
                     <td style="border-top:1px solid #1a1a1a;padding-top:24px;">
                       <p style="margin:0;font-size:12px;color:#444;line-height:1.6;">
-                        Recibiste este mail porque te suscribiste en PORFO.vercel.app<br/>
+                        Recibiste este mail porque te suscribiste en porfo.site<br/>
                         Si no fuiste vos, ignorá este mensaje.<br/>
-<a href="${process.env.NEXT_PUBLIC_APP_URL}/unsubscribe?token=" || ''}" style="color:#555;">Darme de baja</a>
+                        <a href="https://porfo.site/unsubscribe?token=${token}" style="color:#555;">Darme de baja</a>
                       </p>
                     </td>
                   </tr>
