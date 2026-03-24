@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
+import axios from 'axios'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -7,49 +8,89 @@ const supabase = createClient(
 )
 const resend = new Resend(process.env.RESEND_API_KEY)
 
+const DESIGN_KEYWORDS = [
+  'designer', 'design', 'ux', 'ui', 'figma', 'branding',
+  'motion', 'illustration', 'graphic', 'visual', 'product designer',
+  'web designer', 'creative', 'art director', 'brand', 'identity'
+]
+
+function isDesignJob(title) {
+  const lower = title.toLowerCase()
+  return DESIGN_KEYWORDS.some(k => lower.includes(k))
+}
+
 async function getJobs() {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  const res = await fetch(`${baseUrl}/api/scrape`)
-  const data = await res.json()
-  return data.jobs || []
+  try {
+    const [remoteOKRes, dribbbleRes] = await Promise.allSettled([
+      axios.get('https://remoteok.com/api', {
+        headers: { 'User-Agent': 'Mozilla/5.0' },
+        timeout: 10000,
+      }),
+      axios.get('https://dribbble.com/jobs.rss', {
+        headers: { 'User-Agent': 'Mozilla/5.0' },
+        timeout: 10000,
+      }),
+    ])
+
+    const remoteOK = remoteOKRes.status === 'fulfilled'
+      ? remoteOKRes.value.data
+          .filter(j => j.position && isDesignJob(j.position))
+          .slice(0, 10)
+          .map(j => ({
+            title: j.position,
+            company: j.company,
+            url: `https://remoteok.com/remote-jobs/${j.slug}`,
+            source: 'RemoteOK',
+          }))
+      : []
+
+    const dribbbleXml = dribbbleRes.status === 'fulfilled' ? dribbbleRes.value.data : ''
+    const items = dribbbleXml.match(/<item>([\s\S]*?)<\/item>/g) || []
+    const dribbble = items.slice(0, 10).map(item => {
+      const title = item.match(/<title>(.*?)<\/title>/)?.[1] || ''
+      const link = item.match(/<link>(.*?)<\/link>/)?.[1] || ''
+      const desc = item.match(/<description><!\[CDATA\[(.*?)\]\]><\/description>/s)?.[1] || ''
+      const company = desc.match(/<strong>(.*?)<\/strong>/)?.[1] || ''
+      return {
+        title: title.replace(/<!\[CDATA\[|\]\]>/g, '').trim(),
+        company: company.trim(),
+        url: link.trim(),
+        source: 'Dribbble',
+      }
+    }).filter(j => j.title && isDesignJob(j.title))
+
+    return [...remoteOK, ...dribbble]
+  } catch (err) {
+    console.error('getJobs error:', err.message)
+    return []
+  }
 }
 
 function matchesPreferences(job, subscriber) {
   const title = (job.title || '').toLowerCase()
-  const tags = (job.tags || []).map(t => t.toLowerCase())
-
   const specialtyMap = {
-    uxui: ['ux', 'ui', 'ux/ui', 'product designer', 'figma'],
+    uxui: ['ux', 'ui', 'product designer', 'figma'],
     branding: ['brand', 'branding', 'identity'],
-    motion: ['motion', 'animation', 'after effects'],
+    motion: ['motion', 'animation'],
     illustration: ['illustration', 'illustrator'],
     product: ['product designer', 'product design'],
-    '3d': ['3d', 'blender', 'cinema 4d'],
+    '3d': ['3d', 'blender'],
   }
-
   const specialties = subscriber.specialties || []
-  const matches = specialties.some(spec => {
+  return specialties.some(spec => {
     const keywords = specialtyMap[spec] || [spec]
-    return keywords.some(k => title.includes(k) || tags.includes(k))
+    return keywords.some(k => title.includes(k))
   })
-
-  return matches
 }
 
 function buildEmailHtml(jobs, subscriber) {
   const jobsHtml = jobs.slice(0, 8).map(job => `
     <tr>
       <td style="padding:20px 0;border-bottom:1px solid #1a1a1a;">
-        <table width="100%" cellpadding="0" cellspacing="0">
-          <tr>
-            <td>
-              <p style="margin:0 0 4px;font-size:11px;color:#555;letter-spacing:0.08em;">${job.source.toUpperCase()}</p>
-              <h2 style="margin:0 0 6px;font-size:18px;font-weight:600;color:#ffffff;">${job.title}</h2>
-              <p style="margin:0 0 12px;font-size:14px;color:#888;">${job.company}</p>
-              <a href="${job.url}" style="display:inline-block;background:#c8ff00;color:#0a0a0a;font-size:13px;font-weight:600;padding:8px 16px;border-radius:8px;text-decoration:none;">Ver oferta →</a>
-            </td>
-          </tr>
-        </table>
+        <p style="margin:0 0 4px;font-size:11px;color:#555;letter-spacing:0.08em;">${job.source.toUpperCase()}</p>
+        <h2 style="margin:0 0 6px;font-size:18px;font-weight:600;color:#ffffff;">${job.title}</h2>
+        <p style="margin:0 0 12px;font-size:14px;color:#888;">${job.company}</p>
+        <a href="${job.url}" style="display:inline-block;background:#c8ff00;color:#0a0a0a;font-size:13px;font-weight:600;padding:8px 16px;border-radius:8px;text-decoration:none;">Ver oferta →</a>
       </td>
     </tr>
   `).join('')
@@ -63,20 +104,14 @@ function buildEmailHtml(jobs, subscriber) {
         <tr>
           <td align="center">
             <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
-
-              <!-- Logo -->
               <tr>
                 <td style="padding-bottom:32px;">
                   <span style="font-family:monospace;font-size:14px;font-weight:600;color:#c8ff00;letter-spacing:0.1em;">✦ PORFO</span>
                 </td>
               </tr>
-
-              <!-- Título -->
               <tr>
                 <td style="padding-bottom:8px;">
-                  <h1 style="margin:0;font-size:28px;font-weight:700;color:#ffffff;">
-                    ${jobs.length} ofertas nuevas 🎨
-                  </h1>
+                  <h1 style="margin:0;font-size:28px;font-weight:700;color:#ffffff;">${jobs.length} ofertas nuevas 🎨</h1>
                 </td>
               </tr>
               <tr>
@@ -84,8 +119,6 @@ function buildEmailHtml(jobs, subscriber) {
                   <p style="margin:0;font-size:15px;color:#666;">Curadas para tu perfil · ${new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
                 </td>
               </tr>
-
-              <!-- Ofertas -->
               <tr>
                 <td>
                   <table width="100%" cellpadding="0" cellspacing="0">
@@ -93,17 +126,14 @@ function buildEmailHtml(jobs, subscriber) {
                   </table>
                 </td>
               </tr>
-
-              <!-- Footer -->
               <tr>
-                <td style="padding-top:32px;border-top:1px solid #1a1a1a;margin-top:32px;">
+                <td style="padding-top:32px;border-top:1px solid #1a1a1a;">
                   <p style="margin:0;font-size:12px;color:#444;line-height:1.6;">
                     Recibiste este mail porque te suscribiste en porfo.site<br/>
-                    Si no querés recibir más mails, ignorá este mensaje.
+                    <a href="https://porfo.site/unsubscribe?token=${subscriber.token || ''}" style="color:#555;">Darme de baja</a>
                   </p>
                 </td>
               </tr>
-
             </table>
           </td>
         </tr>

@@ -1,4 +1,7 @@
 import axios from 'axios'
+import { GoogleGenerativeAI } from '@google/generative-ai'
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 
 const DESIGN_KEYWORDS = [
   'designer', 'design', 'ux', 'ui', 'ux/ui', 'figma',
@@ -12,6 +15,37 @@ function isDesignJob(title) {
   return DESIGN_KEYWORDS.some(k => lower.includes(k))
 }
 
+async function analyzeJobWithAI(job) {
+  try {
+    const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' })
+
+    const prompt = `Sos un experto en reclutamiento para el mundo del diseño gráfico y UX/UI. 
+Analizá esta oferta de trabajo y respondé SOLO con un JSON válido, sin texto adicional, sin backticks:
+
+Título: ${job.title}
+Empresa: ${job.company}
+Fuente: ${job.source}
+
+Respondé con este formato exacto:
+{
+  "que_buscan": "1-2 oraciones sobre qué busca realmente esta empresa en el candidato",
+  "como_destacar": "1-2 oraciones concretas sobre cómo destacar la aplicación",
+  "nivel": "junior | mid | senior | no especificado",
+  "stack": "herramientas mencionadas o probables como Figma Adobe etc",
+  "tip": "1 consejo corto y concreto para aplicar a esta oferta"
+}`
+
+    const result = await model.generateContent(prompt)
+    const text = result.response.text().trim()
+    const clean = text.replace(/```json|```/g, '').trim()
+    const json = JSON.parse(clean)
+    return json
+  } catch (err) {
+    console.error('AI analysis error:', err.message)
+    return null
+  }
+}
+
 async function scrapeRemoteOK() {
   try {
     const res = await axios.get('https://remoteok.com/api', {
@@ -19,7 +53,7 @@ async function scrapeRemoteOK() {
       timeout: 10000,
     })
     const jobs = res.data.filter(j => j.position && isDesignJob(j.position))
-    return jobs.slice(0, 20).map(j => ({
+    return jobs.slice(0, 10).map(j => ({
       title: j.position,
       company: j.company,
       url: `https://remoteok.com/remote-jobs/${j.slug}`,
@@ -41,7 +75,7 @@ async function scrapeWeWorkRemotely() {
     )
     const xml = res.data
     const items = xml.match(/<item>([\s\S]*?)<\/item>/g) || []
-    return items.slice(0, 20).map(item => {
+    return items.slice(0, 10).map(item => {
       const title = item.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/)?.[1] || ''
       const link = item.match(/<link>(.*?)<\/link>/)?.[1] || ''
       const company = title.split(' at ')?.[1] || ''
@@ -69,7 +103,7 @@ async function scrapeDribbble() {
     )
     const xml = res.data
     const items = xml.match(/<item>([\s\S]*?)<\/item>/g) || []
-    return items.slice(0, 20).map(item => {
+    return items.slice(0, 10).map(item => {
       const title = item.match(/<title>(.*?)<\/title>/)?.[1] || ''
       const link = item.match(/<link>(.*?)<\/link>/)?.[1] || ''
       const desc = item.match(/<description><!\[CDATA\[(.*?)\]\]><\/description>/s)?.[1] || ''
@@ -89,54 +123,36 @@ async function scrapeDribbble() {
   }
 }
 
-async function scrapeGraphicDesignJobs() {
-  try {
-    const res = await axios.get(
-      'https://www.graphicdesignjob.co/feed/',
-      { headers: { 'User-Agent': 'Mozilla/5.0' }, timeout: 10000 }
-    )
-    const xml = res.data
-    const items = xml.match(/<item>([\s\S]*?)<\/item>/g) || []
-    return items.slice(0, 15).map(item => {
-      const title = item.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/)?.[1] ||
-                    item.match(/<title>(.*?)<\/title>/)?.[1] || ''
-      const link = item.match(/<link>(.*?)<\/link>/)?.[1] || ''
-      return {
-        title: title.replace(/<!\[CDATA\[|\]\]>/g, '').trim(),
-        company: '',
-        url: link.trim(),
-        source: 'GraphicDesignJob',
-        tags: ['graphic design'],
-        date: new Date().toISOString(),
-      }
-    }).filter(j => j.title)
-  } catch (err) {
-    console.error('GraphicDesignJob error:', err.message)
-    return []
-  }
-}
-
 export async function GET() {
   try {
-    const [remoteOK, wwr, dribbble, gdj] = await Promise.all([
+    const [remoteOK, wwr, dribbble] = await Promise.all([
       scrapeRemoteOK(),
       scrapeWeWorkRemotely(),
       scrapeDribbble(),
-      scrapeGraphicDesignJobs(),
     ])
 
-    const allJobs = [...remoteOK, ...wwr, ...dribbble, ...gdj]
+    const allJobs = [...remoteOK, ...wwr, ...dribbble]
+
+    // Analizar las primeras 5 ofertas con IA
+    const jobsWithAI = await Promise.all(
+      allJobs.slice(0, 5).map(async job => {
+        const analysis = await analyzeJobWithAI(job)
+        return { ...job, ai: analysis }
+      })
+    )
+
+    const restJobs = allJobs.slice(5).map(job => ({ ...job, ai: null }))
+    const finalJobs = [...jobsWithAI, ...restJobs]
 
     return Response.json({
       ok: true,
-      count: allJobs.length,
+      count: finalJobs.length,
       sources: {
         remoteOK: remoteOK.length,
         weWorkRemotely: wwr.length,
         dribbble: dribbble.length,
-        graphicDesignJob: gdj.length,
       },
-      jobs: allJobs,
+      jobs: finalJobs,
     })
   } catch (err) {
     console.error(err)
